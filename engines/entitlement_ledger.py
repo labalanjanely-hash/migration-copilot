@@ -28,9 +28,13 @@ class EntitlementLedgerEngine(Engine[NormalizedRecord, list[Decision]]):
                     evidence=record.evidence,
                 ))
                 continue
-            if record.record_type not in rules.purchase_record_types:
+            if record.record_type not in (
+                *rules.purchase_record_types, *rules.negative_record_types
+            ):
                 continue
             status = self._field(record, mapping.status)
+            if record.record_type in rules.negative_record_types:
+                status = record.record_type.removesuffix("s")
             groups.setdefault((record.normalized_email, key), []).append(
                 (record, status.casefold() if status else None)
             )
@@ -39,7 +43,9 @@ class EntitlementLedgerEngine(Engine[NormalizedRecord, list[Decision]]):
             statuses = {status for _, status in entries if status}
             evidence = tuple(ev for record, _ in entries for ev in record.evidence)
             succeeded = bool(statuses.intersection(rules.succeeded_statuses))
-            conflicts = statuses.intersection(rules.conflicting_statuses)
+            conflicts = statuses.intersection(rules.conflicting_statuses).union(
+                statuses.intersection({"refund", "dispute"})
+            )
             if succeeded and not conflicts:
                 decisions.append(Decision(
                     subject_id=f"{email}|{key}", decision_type="entitlement",
@@ -71,4 +77,3 @@ class EntitlementLedgerEngine(Engine[NormalizedRecord, list[Decision]]):
             return f"offer:{offer_id}"
         product_id = self._field(record, product)
         return f"product:{product_id}" if product_id else None
-
