@@ -1,0 +1,5 @@
+Email,Name,Phone
+ada@example.com,Ada Builder,+1 (555) 010-1000
+duplicate@example.com,First Duplicate,5550102000
+DUPLICATE@example.com,Second Duplicate,5550102999
+missing-email,Needs Review,5550103000

@@ -82,6 +82,10 @@ def advise(
     run_id: Annotated[str, typer.Option()],
     database: Annotated[Path, typer.Option()] = Path("migration_copilot.db"),
 ) -> None:
+    from dotenv import load_dotenv
+
+    load_dotenv(".env.local", override=False)
+    load_dotenv(".env", override=False)
     from app.ai.migration_advisor import (
         AdvisorUnavailableError,
         MigrationAdvisor,
@@ -110,4 +114,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

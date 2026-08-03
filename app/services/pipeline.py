@@ -6,7 +6,7 @@ from engines.entitlement_ledger import EntitlementLedgerEngine
 from engines.ingestion import CsvIngestionEngine
 from engines.normalization import NormalizationEngine
 from engines.risk_detection import RiskDetectionEngine
-from models.migration import PipelineResult, RiskInput
+from models.migration import PipelineResult, PreparationInput, RiskInput
 from models.records import IngestionRequest, IssueSeverity
 from rules.configuration import PipelineConfiguration
 
@@ -44,6 +44,10 @@ class MigrationPipeline:
             run_id=str(uuid4()), source_manifests=manifests,
             normalized_records=tuple(normalized), duplicate_decisions=tuple(duplicates),
             entitlement_decisions=tuple(entitlements), risks=tuple(risks),
-            prepared_dataset=DatasetPreparationEngine().execute(entitlements),
+            prepared_dataset=DatasetPreparationEngine().execute([PreparationInput(
+                records=tuple(normalized), duplicate_decisions=tuple(duplicates),
+                entitlement_decisions=tuple(entitlements),
+                identity_record_types=self._config.identity_record_types,
+            )]),
             release_status="NO_GO",
         )

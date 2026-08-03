@@ -1,0 +1,9 @@
+{
+  "version": "pilot-fixture-1",
+  "identity_record_types": ["contacts"],
+  "fields_by_record_type": {
+    "contacts": {"email": "Email", "name": "Name", "phone": "Phone"},
+    "transactions": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
+    "refunds": {"email": "Email", "offer_id": "Offer ID"}
+  }
+}

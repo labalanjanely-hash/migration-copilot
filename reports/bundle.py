@@ -15,21 +15,43 @@ class ReportBundleWriter:
     def write(self, result: PipelineResult, directory: Path) -> tuple[Path, ...]:
         directory.mkdir(parents=True, exist_ok=True)
         workbook = directory / f"migration-report-{result.run_id}.xlsx"
-        dataset = directory / f"import-candidates-{result.run_id}.csv"
+        contacts = directory / f"contact-import-candidates-{result.run_id}.csv"
+        entitlements = directory / f"entitlement-import-candidates-{result.run_id}.csv"
+        manual_review = directory / f"manual-review-{result.run_id}.csv"
         manifest = directory / f"run-manifest-{result.run_id}.json"
         self._workbook(result, workbook)
-        with dataset.open("w", encoding="utf-8-sig", newline="") as handle:
-            fields = ["Email", "Entitlement Key", "Decision Status", "Evidence Count",
-                      "Activation Authorized"]
-            writer = csv.DictWriter(handle, fieldnames=fields)
-            writer.writeheader()
-            writer.writerows(result.prepared_dataset.rows)
+        self._csv(contacts, result.prepared_dataset.contact_rows, [
+            "Email", "Name", "Phone", "Source File", "Source Row", "Import Eligible",
+            "Activation Authorized",
+        ])
+        self._csv(entitlements, result.prepared_dataset.rows, [
+            "Email", "Entitlement Key", "Decision Status", "Evidence Count",
+            "Activation Authorized",
+        ])
+        self._csv(manual_review, result.prepared_dataset.manual_review_rows, [
+            "Subject", "Decision Type", "Status", "Rationale", "Conflicts",
+            "Evidence Count", "Approved", "Reviewer Notes",
+        ])
         manifest.write_text(json.dumps({
             "run_id": result.run_id, "release_status": result.release_status,
             "sources": [item.model_dump(mode="json") for item in result.source_manifests],
-            "artifacts": [workbook.name, dataset.name],
+            "counts": {
+                "contact_candidates": len(result.prepared_dataset.contact_rows),
+                "entitlement_candidates": len(result.prepared_dataset.rows),
+                "manual_review": len(result.prepared_dataset.manual_review_rows),
+            },
+            "artifacts": [workbook.name, contacts.name, entitlements.name, manual_review.name],
         }, indent=2) + "\n", encoding="utf-8")
-        return tuple(path.resolve() for path in (workbook, dataset, manifest))
+        return tuple(path.resolve() for path in (
+            workbook, contacts, entitlements, manual_review, manifest
+        ))
+
+    @staticmethod
+    def _csv(path: Path, rows: tuple[dict[str, object], ...], fields: list[str]) -> None:
+        with path.open("w", encoding="utf-8-sig", newline="") as handle:
+            writer = csv.DictWriter(handle, fieldnames=fields)
+            writer.writeheader()
+            writer.writerows(rows)
 
     def _workbook(self, result: PipelineResult, path: Path) -> None:
         book = Workbook()
@@ -44,6 +66,8 @@ class ReportBundleWriter:
             ("Entitlement Decisions", len(result.entitlement_decisions)),
             ("Risk Findings", len(result.risks)),
             ("Candidate Import Rows", len(result.prepared_dataset.rows)),
+            ("Contact Import Candidates", len(result.prepared_dataset.contact_rows)),
+            ("Manual Review Rows", len(result.prepared_dataset.manual_review_rows)),
             ("Activation Authorized", "NO"),
         ):
             summary.append(row)
@@ -51,7 +75,36 @@ class ReportBundleWriter:
         self._decisions(book.create_sheet("Duplicate Review"), result.duplicate_decisions)
         self._decisions(book.create_sheet("Entitlement Ledger"), result.entitlement_decisions)
         self._risks(book.create_sheet("QA & Exceptions"), result.risks)
+        self._records(book.create_sheet("Normalized Records"), result)
+        self._sources(book.create_sheet("Source Register"), result)
         book.save(path)
+
+    def _records(self, sheet: Worksheet, result: PipelineResult) -> None:
+        sheet.append([
+            "Record Type", "Normalized Email", "Normalized Name", "Normalized Phone",
+            "Source File", "Source Row", "Evidence",
+        ])
+        for item in result.normalized_records:
+            sheet.append([
+                item.record_type, item.normalized_email, item.normalized_name,
+                item.normalized_phone, item.source_file, item.source_row,
+                self._evidence(item.evidence),
+            ])
+        self._style(sheet)
+
+    @staticmethod
+    def _sources(sheet: Worksheet, result: PipelineResult) -> None:
+        sheet.append([
+            "Source File", "Export Type", "SHA256", "Rows Seen", "Rows Accepted",
+            "Rows Quarantined", "Encoding", "Delimiter", "Columns",
+        ])
+        for item in result.source_manifests:
+            sheet.append([
+                item.source_file, item.export_type.value, item.sha256, item.rows_seen,
+                item.rows_accepted, item.rows_quarantined, item.encoding, item.delimiter,
+                "; ".join(item.columns),
+            ])
+        ReportBundleWriter._style(sheet)
 
     def _decisions(self, sheet: Worksheet, decisions: tuple[Decision, ...]) -> None:
         sheet.append(["Subject", "Decision Type", "Status", "Rationale", "Evidence", "Conflicts"])
@@ -82,4 +135,3 @@ class ReportBundleWriter:
             sheet.column_dimensions[column[0].column_letter].width = min(
                 max(len(str(cell.value or "")) for cell in column) + 2, 60
             )
-

@@ -41,7 +41,17 @@ class RiskFinding(BaseModel):
 class PreparedDataset(BaseModel):
     model_config = ConfigDict(frozen=True)
     rows: tuple[dict[str, Any], ...]
+    contact_rows: tuple[dict[str, Any], ...] = ()
+    manual_review_rows: tuple[dict[str, Any], ...] = ()
     excluded_decisions: tuple[Decision, ...]
+
+
+class PreparationInput(BaseModel):
+    model_config = ConfigDict(frozen=True)
+    records: tuple[NormalizedRecord, ...]
+    duplicate_decisions: tuple[Decision, ...]
+    entitlement_decisions: tuple[Decision, ...]
+    identity_record_types: tuple[str, ...]
 
 
 class RiskInput(BaseModel):
@@ -61,4 +71,3 @@ class PipelineResult(BaseModel):
     risks: tuple[RiskFinding, ...]
     prepared_dataset: PreparedDataset
     release_status: str
-

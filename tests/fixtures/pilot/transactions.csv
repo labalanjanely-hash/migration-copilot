@@ -1,0 +1,4 @@
+Email,Status,Offer ID
+ada@example.com,succeeded,offer-approved
+duplicate@example.com,succeeded,offer-review
+conflict@example.com,succeeded,offer-conflict

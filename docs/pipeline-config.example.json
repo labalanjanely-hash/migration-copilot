@@ -4,7 +4,12 @@
   "fields_by_record_type": {
     "contacts": {"email": "Email", "name": "Name", "phone": "Phone"},
     "transactions": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
-    "product_access": {"email": "Email", "product_id": "Product ID"}
+    "subscriptions": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
+    "payment_plans": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
+    "offer_purchases": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
+    "product_access": {"email": "Email", "product_id": "Product ID"},
+    "community_memberships": {"email": "Email", "product_id": "Community ID"},
+    "refunds": {"email": "Email", "offer_id": "Offer ID"},
+    "disputes": {"email": "Email", "offer_id": "Offer ID"}
   }
 }
-
