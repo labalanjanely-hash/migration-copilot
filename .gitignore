@@ -13,3 +13,7 @@ __pycache__/
 outputs/*
 !outputs/.gitkeep
 
+# Client evidence inventories stay local; only *.example.json may be committed.
+docs/*asset-inventory*.json
+!docs/*asset-inventory*.example.json
+docs/*asset-inventory*.md
