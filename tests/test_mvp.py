@@ -22,6 +22,9 @@ def config() -> PipelineConfiguration:
             "transactions": SourceFieldMap(email="Email", status="Status", offer_id="Offer ID"),
             "product_access": SourceFieldMap(email="Email", product_id="Product ID"),
             "refunds": SourceFieldMap(email="Email", offer_id="Offer ID"),
+            "subscriptions": SourceFieldMap(
+                email="Email", status="Status", offer_id="Offer ID"
+            ),
         },
     )
 
@@ -131,6 +134,23 @@ def test_duplicate_contact_blocks_contact_and_entitlement_candidates(tmp_path) -
         row["Status"] == "hold" and row["Conflicts"] == "duplicate contact identity"
         for row in result.prepared_dataset.manual_review_rows
     )
+
+
+def test_subscription_status_is_review_evidence_not_entitlement(tmp_path) -> None:
+    source = tmp_path / "subscriptions.csv"
+    source.write_text(
+        "Email,Status,Offer ID\nroyce@example.com,Active,offer-1\n", encoding="utf-8"
+    )
+    result = MigrationPipeline(config()).run([
+        IngestionRequest(
+            path=source, export_type=ExportType.SUBSCRIPTIONS,
+            required_columns=("Email", "Status", "Offer ID"),
+        )
+    ])
+    assert not result.entitlement_decisions
+    assert result.risks[0].code == "BILLING_STATUS_REQUIRES_REVIEW"
+    assert result.risks[0].severity.value == "medium"
+    assert result.prepared_dataset.manual_review_rows[0]["Status"] == "hold"
 
 
 def test_persistence_and_reports(tmp_path) -> None:
