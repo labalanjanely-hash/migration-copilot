@@ -31,10 +31,14 @@ def inspect_csv(
     output: Annotated[Path, typer.Option()] = Path("outputs/source-register.json"),
     required_column: Annotated[list[str] | None, typer.Option("--required-column")] = None,
 ) -> None:
-    requests = [IngestionRequest(
-        path=path, export_type=export_type,
-        required_columns=tuple(required_column or ()),
-    ) for path in source]
+    requests = [
+        IngestionRequest(
+            path=path,
+            export_type=export_type,
+            required_columns=tuple(required_column or ()),
+        )
+        for path in source
+    ]
     result = CsvIngestionEngine().execute(requests)
     typer.echo(f"source_register={SourceRegisterWriter().write(result, output)}")
     typer.echo(f"status={'valid' if result.is_valid else 'review_required'}")
@@ -60,10 +64,14 @@ def run_pipeline(
         if mapping is None:
             raise typer.BadParameter(f"No mapping configured for {export_type.value}.")
         columns = tuple(value for value in mapping.model_dump().values() if isinstance(value, str))
-        requests.append(IngestionRequest(
-            path=Path(raw_path), export_type=export_type,
-            required_columns=columns, expected_columns=columns,
-        ))
+        requests.append(
+            IngestionRequest(
+                path=Path(raw_path),
+                export_type=export_type,
+                required_columns=columns,
+                expected_columns=columns,
+            )
+        )
     try:
         result = MigrationPipeline(config).run(requests)
     except PipelineValidationError as exc:
@@ -81,6 +89,9 @@ def run_pipeline(
 def advise(
     run_id: Annotated[str, typer.Option()],
     database: Annotated[Path, typer.Option()] = Path("migration_copilot.db"),
+    inventory: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
+        "docs/asset-inventory.example.json"
+    ),
 ) -> None:
     from dotenv import load_dotenv
 
@@ -91,9 +102,12 @@ def advise(
         MigrationAdvisor,
         MigrationAdvisorConfig,
     )
-    advisor = MigrationAdvisor(MigrationAdvisorConfig(
-        model=get_settings().openai_model, database_path=database
-    ))
+
+    advisor = MigrationAdvisor(
+        MigrationAdvisorConfig(
+            model=get_settings().openai_model, database_path=database, inventory_path=inventory
+        )
+    )
     try:
         report = asyncio.run(advisor.advise(run_id))
     except AdvisorUnavailableError as exc:
@@ -105,6 +119,7 @@ def advise(
 @cli.command()
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
     import uvicorn
+
     uvicorn.run("app.api:app", host=host, port=port)
 
 

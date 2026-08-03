@@ -55,6 +55,11 @@ preparation aids only: `Activation Authorized` is always false and release statu
 migration-copilot advise --run-id RUN_ID --database migration_copilot.db
 ```
 
+The advisor uses the saved SQLite run plus a local, machine-readable asset inventory.
+The repository includes a non-sensitive schema example at
+`docs/asset-inventory.example.json`. Pass an approved private snapshot with
+`--inventory PATH`; do not commit client operational evidence to a public repository.
+
 Only `advise` calls OpenAI. The deterministic migration pipeline does not require an API
 call and remains authoritative for evidence, exclusions, and review routing.
 

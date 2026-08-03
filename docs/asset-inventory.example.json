@@ -1,0 +1,22 @@
+{
+  "snapshot_date": "2026-01-01",
+  "title": "Sanitized asset inventory example",
+  "source_url": "https://example.invalid/private-source",
+  "release_status": "NO_GO",
+  "baseline": {},
+  "sections": {
+    "live_deltas": [],
+    "products": [],
+    "billing": [],
+    "assets": [],
+    "integrations": [],
+    "gates": [
+      {
+        "classification": "Blocked",
+        "subject": "Example approval gate",
+        "observation": "Replace this example with approved private evidence.",
+        "treatment": "Keep release status NO_GO until evidence and approval are complete."
+      }
+    ]
+  }
+}
