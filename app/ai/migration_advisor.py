@@ -47,7 +47,9 @@ class MigrationAdvisor:
                            "duplicates": len(result.duplicate_decisions),
                            "entitlements": len(result.entitlement_decisions),
                            "risks": len(result.risks),
-                           "candidates": len(result.prepared_dataset.rows)},
+                           "entitlement_candidates": len(result.prepared_dataset.rows),
+                           "contact_candidates": len(result.prepared_dataset.contact_rows),
+                           "manual_review": len(result.prepared_dataset.manual_review_rows)},
                 "risks": [{
                     "severity": risk.severity.value, "code": risk.code,
                     "subject": risk.subject_id, "summary": risk.summary,
@@ -81,4 +83,3 @@ class MigrationAdvisor:
         except APIConnectionError as exc:
             raise AdvisorUnavailableError("Could not connect to the OpenAI API.") from exc
         return AdvisoryReport.model_validate(result.final_output)
-
