@@ -1,0 +1,2 @@
+"""Migration Copilot application layer."""
+
