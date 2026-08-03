@@ -55,6 +55,11 @@ preparation aids only: `Activation Authorized` is always false and release statu
 migration-copilot advise --run-id RUN_ID --database migration_copilot.db
 ```
 
+The advisor uses the saved SQLite run plus the sanitized, version-controlled
+[Kajabi asset inventory](docs/kajabi-read-only-asset-inventory-2026-08-04.md). Override
+the machine-readable snapshot with `--inventory PATH` when a newly reconciled inventory
+is approved.
+
 Only `advise` calls OpenAI. The deterministic migration pipeline does not require an API
 call and remains authoritative for evidence, exclusions, and review routing.
 
