@@ -90,7 +90,7 @@ def advise(
     run_id: Annotated[str, typer.Option()],
     database: Annotated[Path, typer.Option()] = Path("migration_copilot.db"),
     inventory: Annotated[Path, typer.Option(exists=True, dir_okay=False)] = Path(
-        "docs/kajabi-asset-inventory-2026-08-04.json"
+        "docs/asset-inventory.example.json"
     ),
 ) -> None:
     from dotenv import load_dotenv
