@@ -40,6 +40,7 @@ def run_summary(run_id: str) -> dict[str, Any]:
         "duplicates": len(result.duplicate_decisions),
         "entitlements": len(result.entitlement_decisions), "risks": len(result.risks),
         "candidate_rows": len(result.prepared_dataset.rows),
+        "contact_candidate_rows": len(result.prepared_dataset.contact_rows),
+        "manual_review_rows": len(result.prepared_dataset.manual_review_rows),
         "activation_authorized": False,
     }
-
