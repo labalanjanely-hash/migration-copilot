@@ -21,6 +21,7 @@ def config() -> PipelineConfiguration:
             "contacts": SourceFieldMap(email="Email", name="Name"),
             "transactions": SourceFieldMap(email="Email", status="Status", offer_id="Offer ID"),
             "product_access": SourceFieldMap(email="Email", product_id="Product ID"),
+            "refunds": SourceFieldMap(email="Email", offer_id="Offer ID"),
         },
     )
 
@@ -74,6 +75,8 @@ def test_succeeded_purchase_creates_non_authorized_candidate(tmp_path) -> None:
     assert result.release_status == "NO_GO"
     assert result.entitlement_decisions[0].status is DecisionStatus.VERIFIED
     assert result.prepared_dataset.rows[0]["Activation Authorized"] is False
+    assert result.prepared_dataset.contact_rows[0]["Import Eligible"] is True
+    assert result.prepared_dataset.contact_rows[0]["Activation Authorized"] is False
 
 
 def test_refund_conflict_requires_review(tmp_path) -> None:
@@ -96,6 +99,38 @@ def test_product_access_alone_requires_review(tmp_path) -> None:
                          required_columns=("Email", "Product ID"))
     ])
     assert result.entitlement_decisions[0].status is DecisionStatus.MANUAL_REVIEW
+    assert len(result.prepared_dataset.manual_review_rows) == 1
+
+
+def test_refund_export_overrides_succeeded_purchase(tmp_path) -> None:
+    requests = sources(tmp_path)
+    refund = tmp_path / "refunds.csv"
+    refund.write_text(
+        "Email,Offer ID\nroyce@example.com,offer-1\n", encoding="utf-8"
+    )
+    requests.append(IngestionRequest(
+        path=refund, export_type=ExportType.REFUNDS,
+        required_columns=("Email", "Offer ID"),
+    ))
+    result = MigrationPipeline(config()).run(requests)
+    assert result.entitlement_decisions[0].status is DecisionStatus.MANUAL_REVIEW
+    assert "refund" in result.entitlement_decisions[0].conflicts
+    assert not result.prepared_dataset.rows
+
+
+def test_duplicate_contact_blocks_contact_and_entitlement_candidates(tmp_path) -> None:
+    requests = sources(tmp_path)
+    requests[0].path.write_text(
+        "Email,Name\nroyce@example.com,Royce One\n"
+        "ROYCE@example.com,Royce Two\n", encoding="utf-8"
+    )
+    result = MigrationPipeline(config()).run(requests)
+    assert not result.prepared_dataset.contact_rows
+    assert not result.prepared_dataset.rows
+    assert any(
+        row["Status"] == "hold" and row["Conflicts"] == "duplicate contact identity"
+        for row in result.prepared_dataset.manual_review_rows
+    )
 
 
 def test_persistence_and_reports(tmp_path) -> None:
@@ -104,5 +139,4 @@ def test_persistence_and_reports(tmp_path) -> None:
     repository.save(result)
     assert repository.get(result.run_id) == result
     paths = ReportBundleWriter().write(result, tmp_path / "outputs")
-    assert len(paths) == 3 and all(path.stat().st_size > 0 for path in paths)
-
+    assert len(paths) == 5 and all(path.stat().st_size > 0 for path in paths)
