@@ -3,7 +3,8 @@
 Production-oriented, read-only Kajabi to GoHighLevel migration analysis. The MVP reads
 local CSV exports, preserves evidence, normalizes identities, flags duplicates, builds
 a conservative Entitlement Ledger, detects risks, saves SQLite audit snapshots, creates
-XLSX/CSV/JSON reports, and offers an optional OpenAI Agents SDK review.
+XLSX/CSV/JSON reports, prepares separate contact and entitlement candidate files, creates
+an editable manual-review queue, and offers an optional OpenAI Agents SDK review.
 
 ## Safety boundary
 
@@ -43,15 +44,18 @@ migration-copilot run-pipeline \
   --output-directory outputs --database migration_copilot.db
 ```
 
+The pipeline creates five artifacts: an evidence workbook, contact candidates,
+entitlement candidates, a manual-review queue, and a run manifest. Candidate files are
+preparation aids only: `Activation Authorized` is always false and release status remains
+`NO_GO`.
+
 ## Optional OpenAI review
 
 ```bash
 migration-copilot advise --run-id RUN_ID --database migration_copilot.db
 ```
 
-Only `advise` calls OpenAI. API billing is separate from ChatGPT subscriptions. The
-current project key previously reached OpenAI but returned `insufficient_quota`; restore
-API credits before expecting a live advisory response.
+Only `advise` calls OpenAI. The deterministic migration pipeline does not require an API
+call and remains authoritative for evidence, exclusions, and review routing.
 
 See [docs/architecture.md](docs/architecture.md).
-
