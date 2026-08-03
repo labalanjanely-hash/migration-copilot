@@ -1,0 +1,10 @@
+{
+  "version": "1.0-draft",
+  "identity_record_types": ["contacts"],
+  "fields_by_record_type": {
+    "contacts": {"email": "Email", "name": "Name", "phone": "Phone"},
+    "transactions": {"email": "Email", "status": "Status", "offer_id": "Offer ID"},
+    "product_access": {"email": "Email", "product_id": "Product ID"}
+  }
+}
+
