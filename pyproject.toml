@@ -15,6 +15,7 @@ dependencies = [
   "pandas>=2.3,<3",
   "pydantic>=2.11,<3",
   "pydantic-settings>=2.10,<3",
+  "python-dotenv>=1.1,<2",
   "typer>=0.16,<1",
   "uvicorn[standard]>=0.35,<1",
 ]
@@ -51,4 +52,3 @@ select = ["E", "F", "I", "B", "UP", "RUF"]
 python_version = "3.12"
 strict = true
 plugins = ["pydantic.mypy"]
-
