@@ -35,7 +35,7 @@ class MigrationPipeline:
             normalized
         )
         entitlements = EntitlementLedgerEngine(self._config).execute(normalized)
-        risks = RiskDetectionEngine().execute([RiskInput(
+        risks = RiskDetectionEngine(self._config).execute([RiskInput(
             records=tuple(normalized), duplicate_decisions=tuple(duplicates),
             entitlement_decisions=tuple(entitlements),
         )])
@@ -47,6 +47,7 @@ class MigrationPipeline:
             prepared_dataset=DatasetPreparationEngine().execute([PreparationInput(
                 records=tuple(normalized), duplicate_decisions=tuple(duplicates),
                 entitlement_decisions=tuple(entitlements),
+                risks=tuple(risks),
                 identity_record_types=self._config.identity_record_types,
             )]),
             release_status="NO_GO",

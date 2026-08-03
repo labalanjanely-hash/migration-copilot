@@ -3,9 +3,13 @@ from collections.abc import Sequence
 from engines.base import Engine
 from models.decisions import DecisionStatus
 from models.migration import RiskFinding, RiskInput, RiskSeverity
+from rules.configuration import PipelineConfiguration
 
 
 class RiskDetectionEngine(Engine[RiskInput, list[RiskFinding]]):
+    def __init__(self, configuration: PipelineConfiguration) -> None:
+        self._config = configuration
+
     def execute(self, items: Sequence[RiskInput]) -> list[RiskFinding]:
         findings: list[RiskFinding] = []
         for item in items:
@@ -16,6 +20,29 @@ class RiskDetectionEngine(Engine[RiskInput, list[RiskFinding]]):
                         subject_id=f"{record.source_file}:{record.source_row}",
                         summary="Record has no structurally usable email identity.",
                         recommended_action="Correct or exclude after manual review.",
+                        evidence=record.evidence,
+                    ))
+                if record.record_type in {"subscriptions", "payment_plans"}:
+                    mapping = self._config.fields_by_record_type[record.record_type]
+                    raw_status = record.values.get(mapping.status) if mapping.status else None
+                    status = str(raw_status or "").strip().casefold().replace(" ", "_")
+                    stable_reference = (
+                        record.record_type == "subscriptions" and status == "active"
+                    ) or (
+                        record.record_type == "payment_plans" and status == "completed"
+                    )
+                    findings.append(RiskFinding(
+                        code="BILLING_STATUS_REQUIRES_REVIEW",
+                        severity=(RiskSeverity.MEDIUM if stable_reference else RiskSeverity.HIGH),
+                        subject_id=f"{record.source_file}:{record.source_row}",
+                        summary=(
+                            f"{record.record_type} status '{status or 'blank'}' is billing "
+                            "evidence and does not independently authorize entitlement."
+                        ),
+                        recommended_action=(
+                            "Preserve the source status; reconcile succeeded payment evidence, "
+                            "current access, and Royce approval before any access decision."
+                        ),
                         evidence=record.evidence,
                     ))
             findings.extend(RiskFinding(
@@ -33,4 +60,3 @@ class RiskDetectionEngine(Engine[RiskInput, list[RiskFinding]]):
             ) for decision in item.entitlement_decisions
               if decision.status is not DecisionStatus.VERIFIED)
         return findings
-

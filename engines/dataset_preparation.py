@@ -83,6 +83,19 @@ class DatasetPreparationEngine(Engine[PreparationInput, PreparedDataset]):
                 "Approved": False,
                 "Reviewer Notes": "",
             })
+        for risk in item.risks:
+            if risk.code != "BILLING_STATUS_REQUIRES_REVIEW":
+                continue
+            review_rows.append({
+                "Subject": risk.subject_id,
+                "Decision Type": "billing_status_review",
+                "Status": "hold",
+                "Rationale": risk.summary,
+                "Conflicts": risk.code,
+                "Evidence Count": len(risk.evidence),
+                "Approved": False,
+                "Reviewer Notes": "",
+            })
         return PreparedDataset(
             rows=tuple(rows), contact_rows=tuple(contact_rows),
             manual_review_rows=tuple(review_rows), excluded_decisions=tuple(excluded)

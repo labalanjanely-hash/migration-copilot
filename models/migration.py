@@ -51,6 +51,7 @@ class PreparationInput(BaseModel):
     records: tuple[NormalizedRecord, ...]
     duplicate_decisions: tuple[Decision, ...]
     entitlement_decisions: tuple[Decision, ...]
+    risks: tuple[RiskFinding, ...] = ()
     identity_record_types: tuple[str, ...]
 
 
