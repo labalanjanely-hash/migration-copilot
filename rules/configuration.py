@@ -9,12 +9,14 @@ class SourceFieldMap(BaseModel):
     status: str | None = None
     offer_id: str | None = None
     product_id: str | None = None
+    transaction_id: str | None = None
 
 
 class EntitlementRules(BaseModel):
     model_config = ConfigDict(frozen=True)
     purchase_record_types: tuple[str, ...] = ("transactions", "offer_purchases")
     access_record_types: tuple[str, ...] = ("product_access",)
+    negative_record_types: tuple[str, ...] = ("refunds", "disputes")
     succeeded_statuses: tuple[str, ...] = ("succeeded", "paid")
     conflicting_statuses: tuple[str, ...] = (
         "failed", "refunded", "disputed", "canceled", "cancelled", "paused",
