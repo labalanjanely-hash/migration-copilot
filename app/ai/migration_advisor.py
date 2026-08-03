@@ -28,7 +28,7 @@ class MigrationAdvisorConfig:
     model: str
     database_path: Path
     instructions_path: Path = Path("docs/agent_prompt.md")
-    inventory_path: Path = Path("docs/kajabi-asset-inventory-2026-08-04.json")
+    inventory_path: Path = Path("docs/asset-inventory.example.json")
 
 
 class MigrationAdvisor:
